@@ -1,0 +1,5 @@
+- job:
+      name: test_job
+      project-type: folder
+      description: Do not edit this folder through the web!
+      display-name: 'Fancy folder name'
