@@ -33,6 +33,8 @@ from jenkins_jobs.constants import MAGIC_MANAGE_STRING
 from jenkins_jobs.parallel import concurrent
 from jenkins_jobs import utils
 
+import json
+
 __all__ = [
     "JenkinsManager"
 ]
@@ -68,8 +70,34 @@ class JenkinsManager(object):
     @property
     def jobs(self):
         if self._jobs is None:
-            # populate jobs
-            self._jobs = self.jenkins.get_all_jobs()
+            # populate jobs using script - it is way faster
+            groovy_script = """
+                import groovy.json.JsonBuilder;
+
+                // get all projects excluding matrix configuration
+                // as they are simply part of a matrix project.
+                // there may be better ways to get just jobs
+                items = Jenkins.instance.getAllItems(AbstractProject);
+                items.removeAll {
+                  it instanceof hudson.matrix.MatrixConfiguration
+                };
+
+                def json = new JsonBuilder();
+                def root = json {
+                  jobs items.collect {
+                    [
+                      name: it.name,
+                      url: Jenkins.instance.getRootUrl().concat(it.getUrl()),
+                      color: it.getIconColor().toString(),
+                      fullname: it.getFullName()
+                    ]
+                  }
+                };
+
+                // use json.toPrettyString() if viewing
+                println json.toString();
+                """
+            self._jobs = json.loads(self.jenkins.run_script(groovy_script))['jobs']
 
         return self._jobs
 
