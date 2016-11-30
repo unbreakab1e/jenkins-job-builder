@@ -582,9 +582,18 @@ def mask_passwords(registry, xml_parent, data):
       wrappers:
         - mask-passwords
     """
-    XML.SubElement(xml_parent,
+    mpw = XML.SubElement(xml_parent,
                    'com.michelin.cio.hudson.plugins.maskpasswords.'
                    'MaskPasswordsBuildWrapper')
+    pairs = XML.SubElement(mpw, 'varPasswordPairs')
+    passwords = data.get('masked-passwords', [])
+    if passwords:
+        for password in passwords:
+            XML.SubElement(pairs, 'varPasswordPair', attrib={
+            'var': password['name'],
+            'password': password['password']
+            })
+
 
 
 def workspace_cleanup(registry, xml_parent, data):
